@@ -96,12 +96,14 @@ boot(void)
 	 * dev/generic/console.c).
 	 */
 
+
 	kprintf("\n");
 	kprintf("OS/161 base system version %s\n", BASE_VERSION);
 	kprintf("%s", harvard_copyright);
 	kprintf("\n");
 
-	kprintf("Noah's system version %s (%s #%d)\n", 
+	hello();
+	kprintf("MoosdoggOS's system version %s (%s #%d)\n", 
 		GROUP_VERSION, buildconfig, buildversion);
 	kprintf("\n");
 
