@@ -27,74 +27,89 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _TEST_H_
-#define _TEST_H_
-
 /*
- * Declarations for test code and other miscellaneous high-level
- * functions.
+ * Thread test code.
  */
+#include <types.h>
+#include <lib.h>
+#include <thread.h>
+#include <synch.h>
+#include <test.h>
+
+#define NTHREADS  10
+
+static struct semaphore *tsem = NULL;
+static struct semaphore *a = NULL;
+
+static
+void
+init_sem(void)
+{
+	if (tsem==NULL) {
+		tsem = sem_create("tsem", 0);
+		if (tsem == NULL) {
+			panic("threadtest: sem_create failed\n");
+		}
+	}
+
+	if (a==NULL) {
+		a = sem_create("a", 1);
+		if (a == NULL) {
+			panic("threadtest: sem_create failed\n");
+		}
+	}
+}
+
+static
+void
+funthread(void *junk, unsigned long num)
+{
+	(void)junk;
+	for (int i = 0; i < 10; i++) {
+		P(a);
+		for (int j = 0; j < 4; j++) putch('0' + num);
+		putch(' ');
+		V(a);
+	}
+	V(tsem);
+}
+
+static
+void
+runthreads(int num_threads)
+{
+	char name[16];
+	int i, result;
+
+	for (i=0; i<num_threads; i++) {
+		snprintf(name, sizeof(name), "threadtest%d", i);
+		result = thread_fork(name, NULL, funthread, NULL, i);
+		if (result) {
+			panic("threadtest: thread_fork failed %s)\n", 
+			      strerror(result));
+		}
+	}
+
+	for (i=0; i<num_threads; i++) {
+		P(tsem);
+	}
+}
 
 
-/* This is only actually available if OPT_SYNCHPROBS is set. */
-int whalemating(int, char **);
+int
+threadfun(int nargs, char **args)
+{
+	if (nargs < 2) {
+		kprintf("Usage: ttf [number of threads]");
+		return 0;
+	}
 
-#ifdef UW
-int catmouse(int, char **);
-#endif
+	int num_threads = atoi(args[1]);
 
-/*
- * Test code.
- */
+	init_sem();
+	kprintf("Starting the more fun thread test with %d threads...\n", num_threads);
+	runthreads(num_threads);
+	kprintf("\nThread test done.\n");
 
-/* lib tests */
-int arraytest(int, char **);
-int bitmaptest(int, char **);
-int queuetest(int, char **);
-
-/* thread tests */
-int threadtest(int, char **);
-int threadtest2(int, char **);
-int threadtest3(int, char **);
-int threadfun(int, char**);
-int semtest(int, char **);
-int locktest(int, char **);
-int cvtest(int, char **);
-
-#ifdef UW
-/* Another thread and synchronization test */
-int uwlocktest1(int, char **);
-/* Used to test uw-vmstats */
-int uwvmstatstest(int, char **);
-#endif
-
-/* filesystem tests */
-int fstest(int, char **);
-int readstress(int, char **);
-int writestress(int, char **);
-int writestress2(int, char **);
-int createstress(int, char **);
-int printfile(int, char **);
-
-/* other tests */
-int malloctest(int, char **);
-int mallocstress(int, char **);
-int nettest(int, char **);
-
-/* Routine for running a user-level program. */
-int runprogram(char *progname);
-
-/* Kernel menu system. */
-void menu(char *argstr);
-
-/* The main function, called from start.S. */
-void kmain(char *bootstring);
-
-/* Hello function for ASST0 */
-void hello(void);
-
-/* Haiku for shits n gigs */
-int haiku(int argc, char** argv);
-
-
-#endif /* _TEST_H_ */
+	return 0;
+}

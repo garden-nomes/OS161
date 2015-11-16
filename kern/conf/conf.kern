@@ -435,6 +435,7 @@ optfile   synchprobs  synchprobs/catmouse_synch.c
 file		test/arraytest.c
 file		test/bitmaptest.c
 file		test/threadtest.c
+file		test/threadfun.c
 file		test/tt3.c
 file		test/synchtest.c
 file		test/malloctest.c
@@ -442,6 +443,9 @@ file		test/fstest.c
 optfile net	test/nettest.c
 # UW Mod
 file    test/uw-tests.c
+
+# Noah's test stuff
+file    test/haiku.c
 
 
 # UW options for different assignments
