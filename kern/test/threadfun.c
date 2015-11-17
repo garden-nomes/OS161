@@ -39,7 +39,7 @@
 #define NTHREADS  10
 
 static struct semaphore *tsem = NULL;
-static struct semaphore *a = NULL;
+static struct lock *thread_lock = NULL;
 
 static
 void
@@ -52,10 +52,10 @@ init_sem(void)
 		}
 	}
 
-	if (a==NULL) {
-		a = sem_create("a", 1);
-		if (a == NULL) {
-			panic("threadtest: sem_create failed\n");
+	if (thread_lock == NULL) {
+		thread_lock = lock_create("thread_lock");
+		if (thread_lock == NULL) {
+			panic("threadtest: lock_create failed\n");
 		}
 	}
 }
@@ -65,11 +65,12 @@ void
 funthread(void *junk, unsigned long num)
 {
 	(void)junk;
+
 	for (int i = 0; i < 10; i++) {
-		P(a);
+		lock_acquire(thread_lock);
 		for (int j = 0; j < 4; j++) putch('0' + num);
 		putch(' ');
-		V(a);
+		lock_release(thread_lock);
 	}
 	V(tsem);
 }
