@@ -9,11 +9,12 @@
 void
 hello(void)
 {
-	kprintf("Hello! You are an awesome person. Have a beer! You deserve it.\n\n");
+	/* kprintf("Hello! You are an awesome person. Have a beer! You deserve it.\n\n");
 	kprintf("\t     oOOOOOo\n"
 			  "\t    ,|    oO\n"
 			  "\t   //|     |\n"
 			"\t   \\\\|     |\n"
 			  "\t    `|     |\n"
-			  "\t     `-----`\n\n");
+			  "\t     `-----`\n\n"); */
+	kprintf("Hello and welcome to the future of computer kernelling\n");
 }

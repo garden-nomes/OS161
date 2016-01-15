@@ -36,7 +36,7 @@
 #include <synch.h>
 #include <test.h>
 
-#define NTHREADS  10
+#define NTHREADS  9
 
 static struct semaphore *tsem = NULL;
 static struct lock *thread_lock = NULL;
@@ -66,7 +66,7 @@ funthread(void *junk, unsigned long num)
 {
 	(void)junk;
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 4; i++) {
 		lock_acquire(thread_lock);
 		for (int j = 0; j < 4; j++) putch('0' + num);
 		putch(' ');
@@ -100,12 +100,9 @@ runthreads(int num_threads)
 int
 threadfun(int nargs, char **args)
 {
-	if (nargs < 2) {
-		kprintf("Usage: ttf [number of threads]");
-		return 0;
-	}
-
-	int num_threads = atoi(args[1]);
+	int num_threads = NTHREADS;
+	if (nargs >= 2)
+		num_threads = atoi(args[1]);
 
 	init_sem();
 	kprintf("Starting the more fun thread test with %d threads...\n", num_threads);
