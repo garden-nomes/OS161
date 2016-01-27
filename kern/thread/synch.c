@@ -197,11 +197,14 @@ lock_acquire(struct lock *lock)
 			
 		  spinlock_acquire(&lock->lk_lock);
 
+		  /* make sure nothing snuck in and stole the lock in between waking
+			* and aquiring the spinlock */
 		  while (lock->holder != NULL) {
 			  /* bridge between locks as in semaphores */
 			  wchan_lock(lock->lk_wchan);
 			  spinlock_release(&lock->lk_lock);
 
+			  /* sleep... */
 			  wchan_sleep(lock->lk_wchan);
 
 			  spinlock_acquire(&lock->lk_lock);
@@ -219,7 +222,6 @@ lock_release(struct lock *lock)
 {
 		  KASSERT(lock != NULL);
 		  KASSERT(curthread->t_in_interrupt == false);
-		  KASSERT(lock->depth > 0);
 
 		  spinlock_acquire(&lock->lk_lock);
 
