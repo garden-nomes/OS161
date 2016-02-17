@@ -45,6 +45,8 @@ struct vnode;
 struct semaphore;
 #endif // UW
 
+#define MAX_RUNNING_PROCS 256
+
 /*
  * Process structure.
  */
@@ -69,7 +71,11 @@ struct proc {
 #endif
 
 	/* add more material here as needed */
+	pid_t p_pid;
 };
+
+/* Global process table */
+/*static struct proc* proc_table[MAX_RUNNING_PROCS];*/
 
 /* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;

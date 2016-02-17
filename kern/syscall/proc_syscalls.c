@@ -9,6 +9,7 @@
 #include <thread.h>
 #include <addrspace.h>
 #include <copyinout.h>
+#include <mips/trapframe.h>
 
   /* this implementation of sys__exit does not do anything with the exit code */
   /* this needs to be fixed to get exit() and waitpid() working properly */
@@ -46,6 +47,49 @@ void sys__exit(int exitcode) {
   thread_exit();
   /* thread_exit() does not return, so we should never get here */
   panic("return from thread_exit in sys_exit\n");
+}
+
+int sys_fork(struct trapframe* tf, pid_t* retval) {
+	/* we should definitely NOT be a new process */
+	KASSERT(curproc_getas() != NULL);
+
+	struct proc* child_proc;
+	struct trapframe* child_tf;
+	int result;
+
+	/* create child process */
+	child_proc = proc_create_runprogram("child process");
+
+	if (child_proc == NULL) {
+		/* not enough memory for new process */
+		return ENOMEM;
+	}
+
+	/* copy current process's address space */
+	result = as_copy(curproc_getas(), &child_proc->p_addrspace);
+	if (result) {
+		proc_destroy(child_proc);
+		return result;
+	}
+
+	/* copy trapframe and modify it */
+	child_tf = kmalloc(sizeof(struct trapframe));
+	if (child_tf == NULL) {
+		proc_destroy(child_proc);
+		return ENOMEM;
+	}
+
+	*child_tf = *tf;
+	child_tf->tf_v0 = 0;	/* set return code to 0 */
+	child_tf->tf_epc += 4;	/* prevent syscall from repeating */
+
+	/* heeeere we go */
+	thread_fork("child thread", child_proc, (void*)enter_forked_process,
+		(void*)child_tf, 0);
+
+	/* successful exit */
+	*retval = 1;
+	return 0;
 }
 
 

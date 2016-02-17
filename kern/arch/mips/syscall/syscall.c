@@ -100,14 +100,14 @@ syscall(struct trapframe *tf)
 	retval = 0;
 
 	switch (callno) {
-	    case SYS_reboot:
-		err = sys_reboot(tf->tf_a0);
-		break;
+		case SYS_reboot:
+			err = sys_reboot(tf->tf_a0);
+			break;
 
 	    case SYS___time:
-		err = sys___time((userptr_t)tf->tf_a0,
+			err = sys___time((userptr_t)tf->tf_a0,
 				 (userptr_t)tf->tf_a1);
-		break;
+			break;
 #ifdef UW
 	case SYS_write:
 	  err = sys_write((int)tf->tf_a0,
@@ -132,6 +132,9 @@ syscall(struct trapframe *tf)
 #endif // UW
 
 	    /* Add stuff here */
+		case SYS_fork:
+			err = sys_fork(tf, (pid_t*)&retval);
+			break;
  
 	default:
 	  kprintf("Unknown syscall %d\n", callno);
@@ -169,15 +172,22 @@ syscall(struct trapframe *tf)
 }
 
 /*
- * Enter user mode for a newly forked process.
+ * Enter user mode for a newly forked process.  Forms the entrypoint for the
+ * newly created thread.
  *
- * This function is provided as a reminder. You need to write
- * both it and the code that calls it.
- *
- * Thus, you can trash it and do things another way if you prefer.
+ * arg1 should be a pointer to the trapframe
  */
 void
-enter_forked_process(struct trapframe *tf)
+enter_forked_process(void* arg1, unsigned long arg2)
 {
-	(void)tf;
+	struct trapframe tf;
+	(void) arg2;	/* prevent unused argument warnings */
+
+
+	/* copy parent trapframe onto stack, by casting it to trapframe* and
+	 * dereferencing it at the same time (sorry if that's confusing) */
+	tf = *(struct trapframe*)arg1;
+
+	/* switch to usermode */
+	mips_usermode(&tf);
 }
