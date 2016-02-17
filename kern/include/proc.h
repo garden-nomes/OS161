@@ -36,8 +36,8 @@
  * Note: curproc is defined by <current.h>.
  */
 
-#include <spinlock.h>
 #include <thread.h> /* required for struct threadarray */
+#include <synch.h>	/* for process table lock */
 
 struct addrspace;
 struct vnode;
@@ -74,10 +74,6 @@ struct proc {
 	pid_t p_pid;
 };
 
-/* Global process table */
-/*static struct proc* proc_table[MAX_RUNNING_PROCS];*/
-
-/* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;
 
 /* Semaphore used to signal when there are no more processes */

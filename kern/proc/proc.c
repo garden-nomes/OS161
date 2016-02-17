@@ -57,6 +57,12 @@
 struct proc *kproc;
 
 /*
+ * The process table.
+ */
+struct proc* proc_table[MAX_RUNNING_PROCS];
+struct lock* proc_table_lock;
+
+/*
  * Mechanism for making the kernel menu thread sleep while processes are running
  */
 #ifdef UW
@@ -84,6 +90,7 @@ proc_create(const char *name)
 	if (proc == NULL) {
 		return NULL;
 	}
+
 	proc->p_name = kstrdup(name);
 	if (proc->p_name == NULL) {
 		kfree(proc);
@@ -166,6 +173,11 @@ proc_destroy(struct proc *proc)
 	threadarray_cleanup(&proc->p_threads);
 	spinlock_cleanup(&proc->p_lock);
 
+	/* free spot in the process table */
+	lock_acquire(proc_table_lock);
+	proc_table[proc->p_pid] = NULL;
+	lock_release(proc_table_lock);
+
 	kfree(proc->p_name);
 	kfree(proc);
 
@@ -193,6 +205,14 @@ proc_destroy(struct proc *proc)
 void
 proc_bootstrap(void)
 {
+  /* seems like a good place to initialize process table lock */
+  proc_table_lock = lock_create("proc_table lock");
+
+  /* and the process table */
+  for (pid_t i = 0; i < MAX_RUNNING_PROCS; ++i) {
+	  proc_table[i] = NULL;
+  }
+
   kproc = proc_create("[kernel]");
   if (kproc == NULL) {
     panic("proc_create for kproc failed\n");
@@ -226,6 +246,21 @@ proc_create_runprogram(const char *name)
 	if (proc == NULL) {
 		return NULL;
 	}
+
+	/* assign next available pid */
+	proc->p_pid = 0;
+	lock_acquire(proc_table_lock);
+	for (pid_t pid = 1; pid < MAX_RUNNING_PROCS && proc->p_pid == 0; ++pid) {
+		if (proc_table[pid] == NULL) {
+			proc->p_pid = pid;
+			proc_table[pid] = proc;
+		} else if (pid == MAX_RUNNING_PROCS - 1) {
+			/* not enough space in the process table */
+			kfree(proc);
+			return NULL;
+		}
+	}
+	lock_release(proc_table_lock);
 
 #ifdef UW
 	/* open the console - this should always succeed */

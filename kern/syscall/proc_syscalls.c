@@ -88,7 +88,7 @@ int sys_fork(struct trapframe* tf, pid_t* retval) {
 		(void*)child_tf, 0);
 
 	/* successful exit */
-	*retval = 1;
+	*retval = child_proc->p_pid;
 	return 0;
 }
 
@@ -97,9 +97,7 @@ int sys_fork(struct trapframe* tf, pid_t* retval) {
 int
 sys_getpid(pid_t *retval)
 {
-  /* for now, this is just a stub that always returns a PID of 1 */
-  /* you need to fix this to make it work properly */
-  *retval = 1;
+  *retval = curproc->p_pid;
   return(0);
 }
 
