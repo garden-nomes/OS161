@@ -57,12 +57,6 @@
 struct proc *kproc;
 
 /*
- * The process table.
- */
-struct proc* proc_table[MAX_RUNNING_PROCS];
-struct lock* proc_table_lock;
-
-/*
  * Mechanism for making the kernel menu thread sleep while processes are running
  */
 #ifdef UW
@@ -215,7 +209,7 @@ proc_bootstrap(void)
   proc_table_lock = lock_create("proc_table lock");
 
   /* and the process table */
-  for (pid_t i = 0; i < MAX_RUNNING_PROCS; ++i) {
+  for (pid_t i = 0; i < MAX_PID; ++i) {
 	  proc_table[i] = NULL;
   }
 
@@ -256,11 +250,11 @@ proc_create_runprogram(const char *name)
 	/* assign next available pid */
 	proc->p_pid = 0;
 	lock_acquire(proc_table_lock);
-	for (pid_t pid = 1; pid < MAX_RUNNING_PROCS && proc->p_pid == 0; ++pid) {
+	for (pid_t pid = 1; pid < MAX_PID && proc->p_pid == 0; ++pid) {
 		if (proc_table[pid] == NULL) {
 			proc->p_pid = pid;
 			proc_table[pid] = proc;
-		} else if (pid == MAX_RUNNING_PROCS - 1) {
+		} else if (pid == MAX_PID - 1) {
 			/* not enough space in the process table */
 			kfree(proc);
 			return NULL;

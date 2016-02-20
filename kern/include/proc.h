@@ -45,7 +45,7 @@ struct vnode;
 struct semaphore;
 #endif // UW
 
-#define MAX_RUNNING_PROCS 256
+#define MAX_PID 256
 
 /*
  * Process structure.
@@ -78,7 +78,14 @@ struct proc {
 	bool exited;
 };
 
+/* kernel process */
 extern struct proc *kproc;
+
+/*
+ * The process table.
+ */
+struct proc* proc_table[MAX_PID];
+struct lock* proc_table_lock;
 
 /* Semaphore used to signal when there are no more processes */
 #ifdef UW
