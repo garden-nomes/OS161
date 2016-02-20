@@ -99,7 +99,8 @@ proc_create(const char *name)
 
 	threadarray_init(&proc->p_threads);
 	spinlock_init(&proc->p_lock);
-	proc->p_exit_sem = sem_create(name, 0);
+	proc->p_exit_lock = lock_create(name);
+	proc->p_exit_cv = cv_create(name);
 
 	/* VM fields */
 	proc->p_addrspace = NULL;
@@ -173,7 +174,8 @@ proc_destroy(struct proc *proc)
 
 	threadarray_cleanup(&proc->p_threads);
 	spinlock_cleanup(&proc->p_lock);
-	sem_destroy(proc->p_exit_sem);
+	lock_destroy(proc->p_exit_lock);
+	cv_destroy(proc->p_exit_cv);
 
 	/* free spot in the process table */
 	lock_acquire(proc_table_lock);

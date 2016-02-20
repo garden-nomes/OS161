@@ -72,8 +72,9 @@ struct proc {
 
 	/* add more material here as needed */
 	pid_t p_pid;
-	struct semaphore* p_exit_sem;
-	int exitcode;
+	struct lock* p_exit_lock;
+	struct cv* p_exit_cv;
+	int exit_code;
 };
 
 extern struct proc *kproc;
