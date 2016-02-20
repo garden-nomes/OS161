@@ -102,6 +102,8 @@ proc_create(const char *name)
 	proc->p_exit_lock = lock_create(name);
 	proc->p_exit_cv = cv_create(name);
 
+	proc->exited = false;
+
 	/* VM fields */
 	proc->p_addrspace = NULL;
 

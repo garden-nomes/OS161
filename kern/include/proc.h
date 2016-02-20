@@ -75,6 +75,7 @@ struct proc {
 	struct lock* p_exit_lock;
 	struct cv* p_exit_cv;
 	int exit_code;
+	bool exited;
 };
 
 extern struct proc *kproc;
