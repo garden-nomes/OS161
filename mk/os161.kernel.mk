@@ -85,6 +85,7 @@ TAGS_HEADERS=\
 
 # Default rule: link the kernel.
 all: includelinks .WAIT $(KERNEL)
+	pmake install
 
 #
 # Here's how we link the kernel. 
