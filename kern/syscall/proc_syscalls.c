@@ -112,24 +112,31 @@ sys_waitpid(pid_t pid,
   int exitstatus;
   int result;
 
-  /* this is just a stub implementation that always reports an
-     exit status of 0, regardless of the actual exit status of
-     the specified process.   
-     In fact, this will return 0 even if the specified process
-     is still running, and even if it never existed in the first place.
-
-     Fix this!
-  */
-
   if (options != 0) {
+	/* invalid options */
     return(EINVAL);
   }
-  /* for now, just pretend the exitstatus is 0 */
-  exitstatus = 0;
-  result = copyout((void *)&exitstatus,status,sizeof(int));
+
+  if (proc_table[pid] == NULL) {
+	/* no such process */
+	return(ESRCH);
+  }
+
+  /* wait for exit */
+  if (!proc_table[pid]->exited) {
+	lock_aquire(proc_table[pid]->p_exit_lock);
+	cv_wait(proc_table[pid]->p_exit_cv);
+	lock_release(proc_table[pid]->p_exit_lock);
+  }
+  
+  /* return exit status */
+  exitstatus = proc_table[pid]->exit_code;
+  result = copyout((void *)&proc_table[pid]->exit_code, status, sizeof(int));
   if (result) {
     return(result);
   }
+
+  /* done */
   *retval = pid;
   return(0);
 }
