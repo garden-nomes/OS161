@@ -95,8 +95,9 @@ proc_create(const char *name)
 	spinlock_init(&proc->p_lock);
 	proc->p_exit_lock = lock_create(name);
 	proc->p_exit_cv = cv_create(name);
-
-	proc->exited = false;
+	proc->p_exited = false;
+	/* assign next available pid */
+	proc->p_pid = 0;
 
 	/* VM fields */
 	proc->p_addrspace = NULL;
@@ -206,7 +207,7 @@ void
 proc_bootstrap(void)
 {
   /* seems like a good place to initialize process table lock */
-  proc_table_lock = lock_create("proc_table lock");
+  proc_table_lock = lock_create("[proc_table_lock]");
 
   /* and the process table */
   for (pid_t i = 0; i < MAX_PID; ++i) {
@@ -217,6 +218,12 @@ proc_bootstrap(void)
   if (kproc == NULL) {
     panic("proc_create for kproc failed\n");
   }
+
+  /* assign pid and ppid */
+  kproc->p_pid = 0;
+  proc_table[0] = kproc;
+  kproc->pp_pid = 0;
+
 #ifdef UW
   proc_count = 0;
   proc_count_mutex = sem_create("proc_count_mutex",1);
@@ -247,9 +254,9 @@ proc_create_runprogram(const char *name)
 		return NULL;
 	}
 
-	/* assign next available pid */
-	proc->p_pid = 0;
+	/* assign a pid */
 	lock_acquire(proc_table_lock);
+
 	for (pid_t pid = 1; pid < MAX_PID && proc->p_pid == 0; ++pid) {
 		if (proc_table[pid] == NULL) {
 			proc->p_pid = pid;
@@ -260,7 +267,11 @@ proc_create_runprogram(const char *name)
 			return NULL;
 		}
 	}
+
 	lock_release(proc_table_lock);
+
+	/* assign parent pid */
+	proc->pp_pid = curproc->p_pid;
 
 #ifdef UW
 	/* open the console - this should always succeed */
